@@ -36,3 +36,39 @@ export const updateStage = async (req: AuthRequest, res: Response, next: NextFun
     next(error);
   }
 };
+
+export const assignScreening = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const app = await ApplicationService.assignScreening(req.params.id, req.body, req.user!.id);
+    return sendResponse(res, 200, 'Screening test assigned to candidate', app);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const submitScreeningScore = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const app = await ApplicationService.submitScreeningScore(req.params.id, req.body, req.user!.id);
+    return sendResponse(res, 200, 'Screening test score recorded', app);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const requestInterviewer = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const result = await ApplicationService.requestInterviewer(req.params.id, req.body, req.user!.id);
+    return sendResponse(res, 200, 'Interviewer request dispatched', result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendReportToManager = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const app = await ApplicationService.sendReportToManager(req.params.id, req.body, req.user!.id);
+    return sendResponse(res, 200, 'Report submitted to Hiring Manager for final decision', app);
+  } catch (error) {
+    next(error);
+  }
+};

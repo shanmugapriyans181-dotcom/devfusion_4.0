@@ -119,27 +119,15 @@ export class ApplicationService {
       throw ApiError.forbidden('Cannot update applications for jobs in other companies');
     }
 
-    // Phase 8: State Machine Enforcement
-    const validTransitions: Record<ApplicationStage, ApplicationStage[]> = {
-      APPLIED: ['SCREENING', 'REJECTED'],
-      SCREENING: ['SHORTLISTED', 'REJECTED'],
-      SHORTLISTED: ['TECHNICAL_INTERVIEW', 'REJECTED'],
-      TECHNICAL_INTERVIEW: ['HR_INTERVIEW', 'REJECTED'],
-      HR_INTERVIEW: ['OFFER', 'REJECTED'],
-      OFFER: ['HIRED', 'REJECTED'],
-      HIRED: [],
-      REJECTED: [],
-    };
-
-    const allowedNextStages = validTransitions[existing.stage] || [];
-    
-    if (!allowedNextStages.includes(stage) && existing.stage !== stage) {
-      throw ApiError.badRequest(`Invalid state transition from ${existing.stage} to ${stage}`);
-    }
-
     const application = await prisma.application.update({
       where: { id },
       data: { stage },
+      include: {
+        job: true,
+        candidate: { include: { user: true } },
+        interviews: true,
+        offerLetters: true,
+      },
     });
 
     await prisma.activityLog.create({
@@ -156,10 +144,181 @@ export class ApplicationService {
       data: {
         userId: existing.candidate.userId,
         title: 'Application Status Updated',
-        message: `Your application for ${existing.job.title} moved to ${stage.replace('_', ' ')}.`,
+        message: `Your application for ${existing.job.title} is now in stage: ${stage.replace(/_/g, ' ')}.`,
         type: 'STAGE_UPDATE',
       },
     });
+
+    return application;
+  }
+
+  static async assignScreening(id: string, data: { testTitle: string; testUrl: string; duration?: number; instructions?: string }, userId: string) {
+    const existing = await prisma.application.findUnique({
+      where: { id },
+      include: { job: true, candidate: { include: { user: true } } },
+    });
+
+    if (!existing) throw ApiError.notFound('Application not found');
+
+    const notePayload = {
+      testTitle: data.testTitle || 'Technical Coding Assessment',
+      testUrl: data.testUrl || 'https://www.hackerrank.com/test/mock-screening',
+      duration: data.duration || 60,
+      instructions: data.instructions || 'Please complete this test to qualify for the live technical interview round.',
+      assignedAt: new Date().toISOString(),
+    };
+
+    const application = await prisma.application.update({
+      where: { id },
+      data: {
+        stage: ApplicationStage.SCREENING,
+        notes: JSON.stringify(notePayload),
+      },
+      include: { job: true, candidate: { include: { user: true } } },
+    });
+
+    await prisma.notification.create({
+      data: {
+        userId: existing.candidate.userId,
+        title: 'Screening Test Assigned',
+        message: `You have been assigned a screening assessment for ${existing.job.title}: ${notePayload.testTitle}. Link: ${notePayload.testUrl}`,
+        type: 'SCREENING',
+      },
+    });
+
+    return application;
+  }
+
+  static async submitScreeningScore(id: string, data: { score: number; submissionNotes?: string }, userId: string) {
+    const existing = await prisma.application.findUnique({
+      where: { id },
+      include: { job: true, candidate: { include: { user: true } } },
+    });
+
+    if (!existing) throw ApiError.notFound('Application not found');
+
+    let currentNotes: any = {};
+    try {
+      if (existing.notes) currentNotes = JSON.parse(existing.notes);
+    } catch (e) {}
+
+    currentNotes.screeningScore = data.score;
+    currentNotes.submittedAt = new Date().toISOString();
+    currentNotes.candidateNotes = data.submissionNotes || '';
+
+    const newStage = data.score >= 60 ? ApplicationStage.SHORTLISTED : ApplicationStage.REJECTED;
+
+    const application = await prisma.application.update({
+      where: { id },
+      data: {
+        stage: newStage,
+        notes: JSON.stringify(currentNotes),
+      },
+      include: { job: true, candidate: { include: { user: true } } },
+    });
+
+    // Notify Recruiters
+    const recruiters = await prisma.user.findMany({
+      where: { role: { in: ['RECRUITER', 'ADMIN'] } },
+    });
+
+    for (const rec of recruiters) {
+      await prisma.notification.create({
+        data: {
+          userId: rec.id,
+          title: 'Candidate Screening Test Submitted',
+          message: `${existing.candidate.user.name} scored ${data.score}% on the screening round for ${existing.job.title}.`,
+          type: 'SCREENING',
+        },
+      });
+    }
+
+    return application;
+  }
+
+  static async requestInterviewer(id: string, data: { interviewerId: string; meetingUrl?: string; scheduledAt?: string; duration?: number }, userId: string) {
+    const existing = await prisma.application.findUnique({
+      where: { id },
+      include: { job: true, candidate: { include: { user: true } } },
+    });
+
+    if (!existing) throw ApiError.notFound('Application not found');
+
+    // Create interview record
+    const interview = await prisma.interview.create({
+      data: {
+        applicationId: id,
+        title: `Technical Video Interview with ${existing.candidate.user.name}`,
+        type: 'Online Video Interview',
+        scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+        duration: data.duration || 45,
+        meetingUrl: data.meetingUrl || 'https://meet.google.com/devfusion-live',
+        participants: {
+          create: {
+            userId: data.interviewerId,
+          },
+        },
+      },
+    });
+
+    const application = await prisma.application.update({
+      where: { id },
+      data: { stage: ApplicationStage.TECHNICAL_INTERVIEW },
+      include: { job: true, candidate: { include: { user: true } }, interviews: true },
+    });
+
+    // Notify Interviewer
+    await prisma.notification.create({
+      data: {
+        userId: data.interviewerId,
+        title: 'New Interview Session Assigned',
+        message: `You have been requested to conduct an online technical interview for candidate ${existing.candidate.user.name} (${existing.job.title}).`,
+        type: 'INTERVIEW',
+      },
+    });
+
+    // Notify Candidate
+    await prisma.notification.create({
+      data: {
+        userId: existing.candidate.userId,
+        title: 'Interview Scheduled!',
+        message: `Your technical interview for ${existing.job.title} has been arranged. Please check your interview schedule.`,
+        type: 'INTERVIEW',
+      },
+    });
+
+    return { application, interview };
+  }
+
+  static async sendReportToManager(id: string, data: { reportSummary?: string }, userId: string) {
+    const existing = await prisma.application.findUnique({
+      where: { id },
+      include: { job: true, candidate: { include: { user: true } }, interviews: { include: { feedbacks: true } } },
+    });
+
+    if (!existing) throw ApiError.notFound('Application not found');
+
+    const application = await prisma.application.update({
+      where: { id },
+      data: { stage: ApplicationStage.OFFER },
+      include: { job: true, candidate: { include: { user: true } }, interviews: true },
+    });
+
+    // Notify Hiring Managers
+    const managers = await prisma.user.findMany({
+      where: { role: { in: ['HIRING_MANAGER', 'ADMIN'] } },
+    });
+
+    for (const mgr of managers) {
+      await prisma.notification.create({
+        data: {
+          userId: mgr.id,
+          title: 'Candidate Interview Report Ready for Decision',
+          message: `Recruiter submitted interview report for ${existing.candidate.user.name} (${existing.job.title}). Please review and issue offer.`,
+          type: 'OFFER',
+        },
+      });
+    }
 
     return application;
   }
