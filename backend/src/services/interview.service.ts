@@ -36,6 +36,22 @@ export class InterviewService {
     return interview;
   }
 
+  static async getInterviewers(user: { id: string; role: string; companyId?: string }) {
+    return await prisma.user.findMany({
+      where: {
+        role: { in: [UserRole.INTERVIEWER, UserRole.HIRING_MANAGER, UserRole.RECRUITER, UserRole.ADMIN] },
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        avatar: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   static async getInterviews(user: { id: string; role: string; companyId?: string }) {
     let where: any = {};
 

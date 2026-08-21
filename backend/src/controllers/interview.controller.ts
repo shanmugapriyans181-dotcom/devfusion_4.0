@@ -15,6 +15,15 @@ export const scheduleInterview = async (req: AuthRequest, res: Response, next: N
   }
 };
 
+export const getInterviewers = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const interviewers = await InterviewService.getInterviewers(req.user!);
+    return sendResponse(res, 200, 'Interviewers fetched successfully', interviewers);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getInterviews = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const interviews = await InterviewService.getInterviews(req.user!);
