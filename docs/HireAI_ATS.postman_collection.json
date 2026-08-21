@@ -1,0 +1,66 @@
+{
+  "info": {
+    "name": "HireAI ATS - Full Stack Postman Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login - Candidate",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"candidate@demo.com\",\n  \"password\": \"DemoPassword123!\"\n}"
+            },
+            "url": "http://localhost:5000/api/auth/login"
+          }
+        },
+        {
+          "name": "Login - Recruiter",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"recruiter@demo.com\",\n  \"password\": \"DemoPassword123!\"\n}"
+            },
+            "url": "http://localhost:5000/api/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Jobs",
+      "item": [
+        {
+          "name": "Get Open Jobs",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:5000/api/jobs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI Engine",
+      "item": [
+        {
+          "name": "Calculate AI Match Score",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobTitle\": \"Senior Full Stack Engineer\",\n  \"jobSkills\": [\"React\", \"TypeScript\", \"Node.js\", \"PostgreSQL\"]\n}"
+            },
+            "url": "http://localhost:5000/api/ai/match"
+          }
+        }
+      ]
+    }
+  ]
+}

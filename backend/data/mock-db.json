@@ -1,0 +1,150 @@
+{
+  "company": {
+    "id": "comp-101",
+    "name": "ATS Platform",
+    "logo": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150",
+    "website": "https://atsplatform.example.com",
+    "industry": "Software & Technology",
+    "size": "1-50 employees",
+    "description": "Central Recruitment Platform.",
+    "locations": [
+      "Remote"
+    ],
+    "socialLinks": {},
+    "createdAt": "2026-08-20T10:00:25.195Z",
+    "updatedAt": "2026-08-20T10:00:25.195Z"
+  },
+  "users": [
+    {
+      "id": "usr-admin-demo-1",
+      "name": "System Admin",
+      "email": "admin@company.com",
+      "passwordHash": "$2a$10$IrvahYFtIV9NUi1cZrL9u..zI867lnf6O1P1Q7mcLmHGEwyGX8SDG",
+      "role": "ADMIN",
+      "emailVerified": true,
+      "companyId": "comp-101",
+      "location": "Remote",
+      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+      "createdAt": "2026-08-20T10:00:25.195Z",
+      "updatedAt": "2026-08-20T10:00:25.195Z"
+    },
+    {
+      "id": "usr-mock-1787220516091",
+      "name": "shanmugapriyans",
+      "email": "24ada54@karpagamtech.ac.in",
+      "passwordHash": "$2a$10$uKEDQFTtqUXVu/fRtojwZ.ViDrwhwEzAKchnEUX4jbYTSteQa4Vx.",
+      "role": "CANDIDATE",
+      "emailVerified": true,
+      "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+      "createdAt": "2026-08-20T10:08:36.091Z",
+      "updatedAt": "2026-08-20T10:08:36.091Z"
+    },
+    {
+      "id": "usr-mock-1787221534013",
+      "name": "dharun",
+      "email": "24ada12@karpagamtech.ac.in",
+      "passwordHash": "$2a$10$i3T6upvIlHfgtRnxKIVQzuA734pkQH7tGgKKK2ocOMmSLKDE2sXAS",
+      "role": "RECRUITER",
+      "emailVerified": true,
+      "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+      "createdAt": "2026-08-20T10:25:34.013Z",
+      "updatedAt": "2026-08-20T10:25:34.013Z"
+    },
+    {
+      "id": "usr-mock-1787221567290",
+      "name": "rajesh",
+      "email": "24ada41@karpagamtech.ac.in",
+      "passwordHash": "$2a$10$ribQLcn2PPVC6ayvdSqvSe/k48rsS3TmPj5uUstrcRdTlAhGZN.ZS",
+      "role": "HIRING_MANAGER",
+      "emailVerified": true,
+      "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+      "createdAt": "2026-08-20T10:26:07.290Z",
+      "updatedAt": "2026-08-20T10:26:07.290Z"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "cand-mock-1787220516091",
+      "userId": "usr-mock-1787220516091",
+      "skills": [
+        "JavaScript",
+        "React",
+        "Node.js"
+      ],
+      "languages": [
+        "English"
+      ],
+      "totalExperience": 2,
+      "user": {
+        "id": "usr-mock-1787220516091",
+        "name": "shanmugapriyans",
+        "email": "24ada54@karpagamtech.ac.in",
+        "passwordHash": "$2a$10$uKEDQFTtqUXVu/fRtojwZ.ViDrwhwEzAKchnEUX4jbYTSteQa4Vx.",
+        "role": "CANDIDATE",
+        "emailVerified": true,
+        "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+        "createdAt": "2026-08-20T10:08:36.091Z",
+        "updatedAt": "2026-08-20T10:08:36.091Z"
+      },
+      "createdAt": "2026-08-20T10:08:36.091Z",
+      "updatedAt": "2026-08-20T10:08:36.091Z"
+    }
+  ],
+  "jobs": [
+    {
+      "id": "job-mock-1787221615156",
+      "companyId": "comp-101",
+      "createdById": "usr-mock-1787221567290",
+      "title": "Database Management",
+      "department": "Engineering",
+      "description": "...............................................",
+      "requirements": [
+        "3+ years experience",
+        "React",
+        "Node.js",
+        "TypeScript"
+      ],
+      "skills": [
+        "React",
+        "Node.js",
+        "TypeScript",
+        "PostgreSQL"
+      ],
+      "location": "remote",
+      "salaryMin": 120000,
+      "salaryMax": 170000,
+      "experience": 3,
+      "employmentType": "FULL_TIME",
+      "workMode": "HYBRID",
+      "status": "PENDING_RECRUITER_APPROVAL",
+      "deadline": "2026-09-19T10:26:55.156Z",
+      "createdAt": "2026-08-20T10:26:55.156Z",
+      "updatedAt": "2026-08-20T10:26:55.156Z",
+      "company": {
+        "id": "comp-101",
+        "name": "ATS Platform",
+        "logo": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150",
+        "website": "https://atsplatform.example.com",
+        "industry": "Software & Technology",
+        "size": "1-50 employees",
+        "description": "Central Recruitment Platform.",
+        "locations": [
+          "Remote"
+        ],
+        "socialLinks": {},
+        "createdAt": "2026-08-20T10:00:25.195Z",
+        "updatedAt": "2026-08-20T10:00:25.195Z"
+      }
+    }
+  ],
+  "resumes": [],
+  "analyses": [],
+  "applications": [],
+  "interviews": [],
+  "feedbacks": [],
+  "codingAssessments": [],
+  "offerLetters": [],
+  "notifications": [],
+  "activityLogs": [],
+  "sessions": []
+}

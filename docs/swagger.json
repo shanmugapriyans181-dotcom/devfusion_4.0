@@ -1,0 +1,65 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "HireAI ATS - REST API Specification",
+    "version": "1.0.0",
+    "description": "AI-Powered Recruitment & Applicant Tracking System API"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000/api",
+      "description": "Development Server"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Register new user account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "email": { "type": "string" },
+                  "password": { "type": "string" },
+                  "role": { "type": "string", "enum": ["CANDIDATE", "RECRUITER", "HIRING_MANAGER", "INTERVIEWER", "ADMIN"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User created successfully" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Login user and issue JWT token & cookie",
+        "responses": {
+          "200": { "description": "Login successful" }
+        }
+      }
+    },
+    "/jobs": {
+      "get": { "summary": "Search & filter open jobs" },
+      "post": { "summary": "Create new job requisition (Recruiter/Admin)" }
+    },
+    "/ai/match": {
+      "post": { "summary": "Calculate AI candidate match score" }
+    },
+    "/applications": {
+      "get": { "summary": "List applications" },
+      "post": { "summary": "Submit job application" }
+    },
+    "/applications/{id}/stage": {
+      "put": { "summary": "Update application Kanban pipeline stage" }
+    },
+    "/admin/audit-logs": {
+      "get": { "summary": "Fetch system audit logs (Admin)" }
+    }
+  }
+}
