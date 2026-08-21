@@ -9,8 +9,6 @@ import { ApplicationStage } from '../types';
 import {
   Sparkles,
   User,
-  MoveRight,
-  CheckCircle,
   ArrowRight,
   ExternalLink,
   Code,
@@ -21,23 +19,30 @@ import {
   CheckCircle2,
   Clock,
   Briefcase,
-  Building
+  Building,
+  Filter,
+  Check,
+  Search,
+  FileText
 } from 'lucide-react';
 
-const KANBAN_STAGES: { key: ApplicationStage; label: string; color: string }[] = [
-  { key: 'APPLIED', label: '1. Applied', color: 'border-slate-500' },
-  { key: 'SCREENING', label: '2. Screening Round', color: 'border-sky-500' },
-  { key: 'SHORTLISTED', label: '3. Screening Passed', color: 'border-indigo-500' },
-  { key: 'TECHNICAL_INTERVIEW', label: '4. Tech Interview', color: 'border-purple-500' },
-  { key: 'OFFER', label: '5. Manager / HR Review', color: 'border-amber-500' },
-  { key: 'HIRED', label: '6. Hired', color: 'border-emerald-500' },
-  { key: 'REJECTED', label: 'Rejected', color: 'border-rose-500' },
+const STAGE_CONFIG: { key: string; label: string; bg: string; border: string; text: string }[] = [
+  { key: 'ALL', label: 'All Candidates', bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400' },
+  { key: 'APPLIED', label: '1. Applied', bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-slate-300' },
+  { key: 'SCREENING', label: '2. Screening Round', bg: 'bg-sky-500/10', border: 'border-sky-500/30', text: 'text-sky-400' },
+  { key: 'SHORTLISTED', label: '3. Screening Passed', bg: 'bg-indigo-500/10', border: 'border-indigo-500/30', text: 'text-indigo-400' },
+  { key: 'TECHNICAL_INTERVIEW', label: '4. Tech Interview', bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400' },
+  { key: 'OFFER', label: '5. Manager / HR Review', bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400' },
+  { key: 'HIRED', label: '6. Hired 🎉', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400' },
+  { key: 'REJECTED', label: 'Rejected ❌', bg: 'bg-rose-500/10', border: 'border-rose-500/30', text: 'text-rose-400' },
 ];
 
 export const KanbanPipelinePage: React.FC = () => {
   const [applications, setApplications] = useState<any[]>([]);
   const [interviewers, setInterviewers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState<string>('ALL');
+  const [searchKeyword, setSearchKeyword] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   // Screening Assignment Modal
@@ -155,14 +160,50 @@ export const KanbanPipelinePage: React.FC = () => {
     }
   };
 
+  // Filter applications
+  const filteredApplications = applications.filter((app) => {
+    const candidateName = app.candidate?.user?.name || app.candidateName || '';
+    const email = app.candidate?.user?.email || app.email || '';
+    const jobTitle = app.job?.title || '';
+
+    const matchesSearch =
+      candidateName.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+      email.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+      jobTitle.toLowerCase().includes(searchKeyword.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    if (activeFilter === 'ALL') return true;
+    if (activeFilter === 'APPLIED') return app.stage === 'APPLIED';
+    if (activeFilter === 'SCREENING') return app.stage === 'SCREENING' || app.stage === 'SCREENING_TEST_ASSIGNED' || app.stage === 'SCREENING_TEST_SUBMITTED';
+    if (activeFilter === 'SHORTLISTED') return app.stage === 'SHORTLISTED' || app.stage === 'SCREENING_PASSED';
+    if (activeFilter === 'TECHNICAL_INTERVIEW') return app.stage === 'TECHNICAL_INTERVIEW' || app.stage === 'INTERVIEW_PENDING' || app.stage === 'INTERVIEW_SCHEDULED' || app.stage === 'HR_INTERVIEW' || app.stage === 'INTERVIEW_COMPLETED';
+    if (activeFilter === 'OFFER') return app.stage === 'OFFER' || app.stage === 'MANAGER_REVIEW' || app.stage === 'OFFER_PENDING' || app.stage === 'OFFER_SENT';
+    if (activeFilter === 'HIRED') return app.stage === 'HIRED' || app.stage === 'OFFER_ACCEPTED';
+    if (activeFilter === 'REJECTED') return app.stage === 'REJECTED' || app.stage === 'SCREENING_FAILED' || app.stage === 'INTERVIEW_FAILED' || app.stage === 'OFFER_REJECTED';
+    return true;
+  });
+
+  const getStageCounts = (stageKey: string) => {
+    if (stageKey === 'ALL') return applications.length;
+    if (stageKey === 'APPLIED') return applications.filter((a) => a.stage === 'APPLIED').length;
+    if (stageKey === 'SCREENING') return applications.filter((a) => a.stage === 'SCREENING' || a.stage === 'SCREENING_TEST_ASSIGNED' || a.stage === 'SCREENING_TEST_SUBMITTED').length;
+    if (stageKey === 'SHORTLISTED') return applications.filter((a) => a.stage === 'SHORTLISTED' || a.stage === 'SCREENING_PASSED').length;
+    if (stageKey === 'TECHNICAL_INTERVIEW') return applications.filter((a) => a.stage === 'TECHNICAL_INTERVIEW' || a.stage === 'INTERVIEW_PENDING' || a.stage === 'INTERVIEW_SCHEDULED' || a.stage === 'HR_INTERVIEW' || a.stage === 'INTERVIEW_COMPLETED').length;
+    if (stageKey === 'OFFER') return applications.filter((a) => a.stage === 'OFFER' || a.stage === 'MANAGER_REVIEW' || a.stage === 'OFFER_PENDING' || a.stage === 'OFFER_SENT').length;
+    if (stageKey === 'HIRED') return applications.filter((a) => a.stage === 'HIRED' || a.stage === 'OFFER_ACCEPTED').length;
+    if (stageKey === 'REJECTED') return applications.filter((a) => a.stage === 'REJECTED' || a.stage === 'SCREENING_FAILED' || a.stage === 'INTERVIEW_FAILED' || a.stage === 'OFFER_REJECTED').length;
+    return 0;
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Interactive Kanban Recruitment Pipeline</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Recruitment Pipeline & Candidate Workflow</h1>
           <p className="text-sm text-slate-400 mt-1">
-            Recruiter Candidate Workflow: Screening Round ➡️ Interview Request ➡️ Total Report to HR / Hiring Manager.
+            Recruiter Action Board: Screening Round ➡️ Interview Request ➡️ Total Report to HR / Hiring Manager.
           </p>
         </div>
         <Badge variant="primary" className="py-1 px-3">
@@ -170,176 +211,212 @@ export const KanbanPipelinePage: React.FC = () => {
         </Badge>
       </div>
 
-      {/* Kanban Board Layout */}
-      <div className="flex gap-4 overflow-x-auto pb-6 min-h-[75vh]">
-        {KANBAN_STAGES.map((stageObj) => {
-          const stageApps = applications.filter((app) => {
-            if (stageObj.key === 'SCREENING') return app.stage === 'SCREENING' || app.stage === 'SCREENING_TEST_ASSIGNED' || app.stage === 'SCREENING_TEST_SUBMITTED';
-            if (stageObj.key === 'TECHNICAL_INTERVIEW') return app.stage === 'TECHNICAL_INTERVIEW' || app.stage === 'INTERVIEW_PENDING' || app.stage === 'INTERVIEW_SCHEDULED' || app.stage === 'HR_INTERVIEW' || app.stage === 'INTERVIEW_COMPLETED';
-            if (stageObj.key === 'OFFER') return app.stage === 'OFFER' || app.stage === 'MANAGER_REVIEW' || app.stage === 'OFFER_PENDING' || app.stage === 'OFFER_SENT';
-            if (stageObj.key === 'HIRED') return app.stage === 'HIRED' || app.stage === 'OFFER_ACCEPTED';
-            if (stageObj.key === 'REJECTED') return app.stage === 'REJECTED' || app.stage === 'SCREENING_FAILED' || app.stage === 'INTERVIEW_FAILED' || app.stage === 'OFFER_REJECTED';
-            return app.stage === stageObj.key;
-          });
+      {/* Horizontal Stage Navigation Tabs (Stacked Rows Selector) */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800 scrollbar-thin">
+        {STAGE_CONFIG.map((cfg) => {
+          const count = getStageCounts(cfg.key);
+          const isActive = activeFilter === cfg.key;
 
           return (
-            <div
-              key={stageObj.key}
-              className={`w-80 shrink-0 bg-slate-900/60 border-t-4 ${stageObj.color} border-x border-b border-slate-800/80 rounded-2xl p-4 space-y-4 flex flex-col`}
+            <button
+              key={cfg.key}
+              onClick={() => setActiveFilter(cfg.key)}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
+                isActive
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
+                  : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+              }`}
             >
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <span className="font-bold text-sm text-white">{stageObj.label}</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-800 text-xs font-semibold text-slate-400">
-                  {stageApps.length}
-                </span>
-              </div>
-
-              <div className="space-y-3 flex-1 overflow-y-auto">
-                {stageApps.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">
-                    No candidates in {stageObj.label}
-                  </div>
-                ) : (
-                  stageApps.map((app) => {
-                    const candidateName = app.candidate?.user?.name || app.candidateName || 'Candidate';
-                    const email = app.candidate?.user?.email || app.email;
-                    const isUpdating = updatingId === app.id;
-
-                    let notesObj: any = {};
-                    try {
-                      if (app.notes) notesObj = JSON.parse(app.notes);
-                    } catch (e) {}
-
-                    return (
-                      <Card
-                        key={app.id}
-                        className="glass-card p-4 space-y-3 hover:border-purple-500/50 transition-all text-left bg-slate-900 border-slate-800"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-9 h-9 rounded-full bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold text-sm">
-                              {candidateName[0]}
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-bold text-white leading-tight">{candidateName}</h4>
-                              <span className="text-[11px] text-slate-400 truncate block max-w-[140px]">{email}</span>
-                            </div>
-                          </div>
-
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                            {app.matchScore || 85}% Match
-                          </span>
-                        </div>
-
-                        <div className="text-xs text-slate-400 space-y-1 pt-1 border-t border-slate-800/80">
-                          <div className="font-medium text-slate-300 flex items-center gap-1">
-                            <Briefcase className="w-3 h-3 text-purple-400" /> {app.job?.title}
-                          </div>
-
-                          {/* Screening Note Details */}
-                          {notesObj.testUrl && (
-                            <div className="p-2 rounded-lg bg-sky-500/10 border border-sky-500/20 text-[11px] text-sky-300">
-                              <span className="font-semibold block">Screening Test:</span>
-                              <a href={notesObj.testUrl} target="_blank" rel="noreferrer" className="underline truncate block text-sky-400">
-                                {notesObj.testTitle || 'Test Link'} <ExternalLink className="w-2.5 h-2.5 inline ml-0.5" />
-                              </a>
-                              {notesObj.screeningScore !== undefined && (
-                                <span className="font-bold text-emerald-400 block mt-0.5">
-                                  Score: {notesObj.screeningScore}%
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Interactive Workflow Buttons */}
-                        <div className="space-y-1.5 pt-2 border-t border-slate-800">
-                          {/* 1. If in APPLIED: Proceed to Screening Round */}
-                          {app.stage === 'APPLIED' && (
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              onClick={() => setSelectedAppForScreening(app)}
-                              className="w-full text-xs py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold flex items-center justify-center gap-1 shadow-lg shadow-sky-500/20"
-                            >
-                              <Code className="w-3.5 h-3.5" /> Proceed to Screening Round
-                            </Button>
-                          )}
-
-                          {/* 2. If in SCREENING: Proceed to Interview Round or Reject */}
-                          {(app.stage === 'SCREENING' || app.stage === 'SCREENING_TEST_ASSIGNED' || app.stage === 'SCREENING_TEST_SUBMITTED' || app.stage === 'SHORTLISTED') && (
-                            <div className="flex items-center gap-1.5">
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => setSelectedAppForInterview(app)}
-                                className="flex-1 text-xs py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-semibold flex items-center justify-center gap-1"
-                              >
-                                <Calendar className="w-3.5 h-3.5" /> Proceed to Interview
-                              </Button>
-                              <Button
-                                variant="danger"
-                                size="sm"
-                                onClick={() => handleStageChange(app.id, 'REJECTED')}
-                                title="Reject Candidate"
-                                className="px-2"
-                              >
-                                <XCircle className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                          )}
-
-                          {/* 3. If in TECHNICAL_INTERVIEW: Send Report to Manager */}
-                          {(app.stage === 'TECHNICAL_INTERVIEW' || app.stage === 'INTERVIEW_SCHEDULED' || app.stage === 'INTERVIEW_COMPLETED') && (
-                            <div className="space-y-1.5">
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => setSelectedAppForReport(app)}
-                                className="w-full text-xs py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center justify-center gap-1 shadow-lg shadow-amber-500/20"
-                              >
-                                <Send className="w-3.5 h-3.5" /> Send Total Report to HR/Manager
-                              </Button>
-                              <Button
-                                variant="danger"
-                                size="sm"
-                                onClick={() => handleStageChange(app.id, 'REJECTED')}
-                                className="w-full text-xs py-1"
-                              >
-                                Reject Candidate
-                              </Button>
-                            </div>
-                          )}
-
-                          {/* 4. If in OFFER: Final Decision State */}
-                          {app.stage === 'OFFER' && (
-                            <div className="text-center p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold">
-                              Under Hiring Manager Final Decision
-                            </div>
-                          )}
-
-                          {/* 5. If in HIRED */}
-                          {(app.stage === 'HIRED' || app.stage === 'OFFER_ACCEPTED') && (
-                            <div className="text-center p-2 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-bold flex items-center justify-center gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5" /> Candidate Hired!
-                            </div>
-                          )}
-
-                          {/* 6. If in REJECTED */}
-                          {app.stage === 'REJECTED' && (
-                            <div className="text-center p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold flex items-center justify-center gap-1">
-                              <XCircle className="w-3.5 h-3.5" /> Application Rejected
-                            </div>
-                          )}
-                        </div>
-                      </Card>
-                    );
-                  })
-                )}
-              </div>
-            </div>
+              <span>{cfg.label}</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${isActive ? 'bg-white text-slate-950' : 'bg-slate-800 text-slate-300'}`}>
+                {count}
+              </span>
+            </button>
           );
         })}
+      </div>
+
+      {/* Search Filter Bar */}
+      <div className="relative">
+        <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+        <input
+          type="text"
+          value={searchKeyword}
+          onChange={(e) => setSearchKeyword(e.target.value)}
+          placeholder="Search by candidate name, email, or job title..."
+          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-800 bg-slate-900 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+        />
+      </div>
+
+      {/* Stacked Horizontal Candidate Rows Layout (________ \n ________ \n ________) */}
+      <div className="space-y-4">
+        {filteredApplications.length === 0 ? (
+          <Card className="glass-card p-12 text-center text-slate-400">
+            <User className="w-12 h-12 mx-auto mb-3 opacity-30 text-purple-400" />
+            <p className="text-lg font-semibold text-white">No candidates found in this stage</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Select another stage tab or wait for candidates to apply from the Job Search page.
+            </p>
+          </Card>
+        ) : (
+          filteredApplications.map((app) => {
+            const candidateName = app.candidate?.user?.name || app.candidateName || 'Candidate';
+            const email = app.candidate?.user?.email || app.email || 'candidate@example.com';
+            const jobTitle = app.job?.title || 'Software Engineer';
+            const matchScore = app.matchScore || 88;
+
+            let notesObj: any = {};
+            try {
+              if (app.notes) notesObj = JSON.parse(app.notes);
+            } catch (e) {}
+
+            return (
+              <Card
+                key={app.id}
+                className="glass-card p-5 bg-slate-900 border-slate-800 hover:border-purple-500/40 transition-all flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6"
+              >
+                {/* Left Section: Candidate & Job Details */}
+                <div className="flex items-start gap-4 flex-1">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold text-lg shrink-0">
+                    {candidateName[0]}
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h3 className="text-base font-bold text-white">{candidateName}</h3>
+                      <span className="text-xs text-slate-400">{email}</span>
+                      <Badge
+                        variant={
+                          app.stage === 'HIRED' || app.stage === 'OFFER_ACCEPTED'
+                            ? 'success'
+                            : app.stage === 'REJECTED' || app.stage === 'SCREENING_FAILED' || app.stage === 'INTERVIEW_FAILED'
+                            ? 'danger'
+                            : 'primary'
+                        }
+                      >
+                        {app.stage.replace(/_/g, ' ')}
+                      </Badge>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 pt-0.5">
+                      <span className="flex items-center gap-1 text-purple-300 font-medium">
+                        <Briefcase className="w-3.5 h-3.5" /> {jobTitle}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Building className="w-3.5 h-3.5 text-indigo-400" /> {app.job?.department || 'Engineering'}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-slate-500" /> Applied: {new Date(app.createdAt).toLocaleDateString()}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" /> AI Match: {matchScore}%
+                      </span>
+                    </div>
+
+                    {/* Screening Details Pill */}
+                    {notesObj.testUrl && (
+                      <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
+                        <span className="text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                          <Code className="w-3.5 h-3.5" />
+                          <span>Screening Test:</span>
+                          <a href={notesObj.testUrl} target="_blank" rel="noreferrer" className="underline font-semibold text-sky-300">
+                            {notesObj.testTitle || 'Test Link'} <ExternalLink className="w-3 h-3 inline" />
+                          </a>
+                        </span>
+                        {notesObj.screeningScore !== undefined && (
+                          <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg font-bold">
+                            Screening Score: {notesObj.screeningScore}%
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Section: Stage Action Buttons */}
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  {/* 1. If in APPLIED: Proceed to Screening Round */}
+                  {app.stage === 'APPLIED' && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => setSelectedAppForScreening(app)}
+                      className="bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-lg shadow-sky-500/20"
+                    >
+                      <Code className="w-3.5 h-3.5" /> Proceed to Screening Round
+                    </Button>
+                  )}
+
+                  {/* 2. If in SCREENING / SHORTLISTED: Proceed to Interview */}
+                  {(app.stage === 'SCREENING' || app.stage === 'SCREENING_TEST_ASSIGNED' || app.stage === 'SCREENING_TEST_SUBMITTED' || app.stage === 'SHORTLISTED') && (
+                    <>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => setSelectedAppForInterview(app)}
+                        className="bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-lg shadow-purple-500/20"
+                      >
+                        <Calendar className="w-3.5 h-3.5" /> Proceed to Interview
+                      </Button>
+
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleStageChange(app.id, 'REJECTED')}
+                        title="Reject Candidate"
+                      >
+                        <XCircle className="w-3.5 h-3.5 mr-1" /> Reject
+                      </Button>
+                    </>
+                  )}
+
+                  {/* 3. If in TECHNICAL_INTERVIEW: Send Total Report to HR / Manager */}
+                  {(app.stage === 'TECHNICAL_INTERVIEW' || app.stage === 'INTERVIEW_SCHEDULED' || app.stage === 'INTERVIEW_COMPLETED') && (
+                    <>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => setSelectedAppForReport(app)}
+                        className="bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20"
+                      >
+                        <Send className="w-3.5 h-3.5" /> Send Total Report to HR/Manager
+                      </Button>
+
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleStageChange(app.id, 'REJECTED')}
+                      >
+                        <XCircle className="w-3.5 h-3.5 mr-1" /> Reject
+                      </Button>
+                    </>
+                  )}
+
+                  {/* 4. If in OFFER: Final Manager Decision State */}
+                  {app.stage === 'OFFER' && (
+                    <span className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" /> Awaiting Manager Final Decision
+                    </span>
+                  )}
+
+                  {/* 5. If in HIRED */}
+                  {(app.stage === 'HIRED' || app.stage === 'OFFER_ACCEPTED') && (
+                    <span className="px-3 py-1.5 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-bold flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4" /> Candidate Hired
+                    </span>
+                  )}
+
+                  {/* 6. If in REJECTED */}
+                  {(app.stage === 'REJECTED' || app.stage === 'SCREENING_FAILED' || app.stage === 'INTERVIEW_FAILED') && (
+                    <span className="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold flex items-center gap-1.5">
+                      <XCircle className="w-4 h-4" /> Application Rejected
+                    </span>
+                  )}
+                </div>
+              </Card>
+            );
+          })
+        )}
       </div>
 
       {/* 1. Screening Test Assignment Modal */}
